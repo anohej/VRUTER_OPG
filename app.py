@@ -8,10 +8,10 @@ app.secret_key = "supersecretkey"
 
 def get_db_connection():
     return mysql.connector.connect(
-        host="10.200.14.28",
+        host="localhost",
         user="anohej",
         password="Ih8Fags",
-        database="todolist_db",
+        database="skolesystem",
     )
 
 
