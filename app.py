@@ -1,14 +1,12 @@
-from flask import Flask, render_template, redirect, url_for, session
+from flask import Flask, render_template, redirect, url_for, session, request
 import mysql.connector
 import hashlib
+from waitress import serve
 
 app = Flask(__name__)
-
 app.secret_key = "supersecretkey"
 
 def get_db_connection():
-
-
     return mysql.connector.connect(
         host="10.200.14.28",
         user="anohej",
@@ -17,31 +15,30 @@ def get_db_connection():
     )
 
 
+@app.route('/register', methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        hashed_password = hashlib.sha256(password.encode()).hexdigest()
 
+        db = get_db_connection()
+        cursor = db.cursor()
+        try:
+            cursor.execute(
+                "INSERT INTO users (username, password) VALUES (%s, %s)",
+                (username, hashed_password)
+            )
+            db.commit()
+        except mysql.connector.IntegrityError:
+            return "username already exists"
+        finally:
+            cursor.close()
+            db.close()
 
-    @app.route('/register', methods=["GET", "POST"])
-    def register ():
-        if request.method == "POST":
-            username = request.form["username"]
-            password = request.form["password"]
-            hashed_password = hashlib.sha256(password.encode()).hexdigest()
+        return redirect(url_for('login'))
 
-            db = get_db_connection()
-            cursor = db.cursor()
-            try:
-                cursor.execute(
-                    "INSERT INTO users (username, password) VALUES (%s, %s)",
-                    (username, hashed_password)
-                )
-                db.commit()
-                except mysql.connector.IntegrityError:
-                    return "username already exists"
-                finally:
-                    cursor.close()
-                    db.close()
-
-                    return redirect(url_for('login'))
-                return render_template("register.html")
+    return render_template("register.html")
 
 
 @app.route('/login', methods=["GET", "POST"])
@@ -107,5 +104,9 @@ def index():
 
 
 
-@app.route('/add')
+#@app.route('/add')
+
+
+if __name__ == '__main__':
+    serve(app, host='0.0.0.0', port=8080)
         
