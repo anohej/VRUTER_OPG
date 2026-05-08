@@ -3,6 +3,7 @@ import mysql.connector
 import hashlib
 from waitress import serve
 
+
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
@@ -32,9 +33,6 @@ def register():
             db.commit()
         except mysql.connector.IntegrityError:
             return "brukernavn already exists"
-        finally:
-            cursor.close()
-            db.close()
 
         return redirect(url_for('login'))
 
@@ -55,7 +53,7 @@ def login():
         cursor = db.cursor(dictionary=True)
         cursor.execute(
             # henter bruker fra databasen der brukernavn og passord_hash matcher
-            "SELECT * FROM bruker WHERE brukernavn = %s AND passord_hash = %s",
+            "SELECT * FROM bruker WHERE brukernavn = %s AND passord_hash = %s",   
             (brukernavn, passord_hash)
         )
         bruker = cursor.fetchone()
@@ -87,7 +85,7 @@ def index():
 
     cursor = db.cursor(dictionary=True) # dictionary=True gjør at tasks blir liste av dictionaries
 
-    cursor.execute("SELECT * FROM deadline ORDER BY frist DESC") # ORDER BY frist DESC = nyeste først
+    cursor.execute("SELECT * FROM deadline WHERE bruker_id = %s ORDER BY frist DESC", (session['user_id'],)) # ORDER BY frist DESC = nyeste først session iden til dem som er logget inn
 
     # fetchall returnerer liste (list) med deadlines
     deadlines = cursor.fetchall()
@@ -97,6 +95,7 @@ def index():
 
     # sender deadlines (liste) og brukernavn (string) til html
     return render_template('index.html', deadlines=deadlines, brukernavn=session['brukernavn'])
+
 
 
 # ny deadline
@@ -167,3 +166,24 @@ def delete_task(task_id):
 
 if __name__ == '__main__':
     serve(app, host='0.0.0.0', port=8080)
+
+
+
+@app.route('/api/vaer')
+def api_vaer():
+    response = requests.get(
+        "https://api.met.no/weatherapi/locationforecast/2.0/compact",
+        params={"lat": "59.91", "lon": "10.75"},
+        headers={"User-Agent": "kube-elev-dashboard kontakt@example.com"},
+        timeout=5
+    )
+    data = response.json()
+    now = data["properties"]["timeseries"][0]["data"]
+    details = now["instant"]["details"]
+    next1 = now.get("next_1_hours", {})
+
+    return jsonify({
+        "temp": round(details["air_temperature"], 1),
+        "vind": round(details["wind_speed"], 1),
+        "nedbor": next1.get("details", {}).get("precipitation_amount", 0)
+    })

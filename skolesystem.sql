@@ -56,3 +56,4 @@ CREATE TABLE favoritt_holdeplass (
     FOREIGN KEY (bruker_id) REFERENCES bruker(id),
     FOREIGN KEY (holdeplass_id) REFERENCES holdeplass(id)
 );
+

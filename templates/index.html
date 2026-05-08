@@ -296,6 +296,12 @@
 
 </div>
 
+card.innerHTML = `
+  <div class="weather-temp">${data.temp}°</div>
+  <div class="weather-hl">Vind: ${data.vind} m/s</div>
+  <div class="weather-hl">Nedbør: ${data.nedbor} mm</div>
+`;
+
 <script>
   // Buss
   let avganger = [];
